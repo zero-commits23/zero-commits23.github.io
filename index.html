@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Virtual Exhibition Project</title>
+    <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
+    <style>
+        body { margin: 0; font-family: monospace; }
+        #ui {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 999; background: rgba(0, 0, 0, 0.85); color: #00ffcc;
+            padding: 12px 24px; border-radius: 8px; text-align: center;
+            border: 1px solid #00ffcc; pointer-events: none; max-width: 80%;
+            font-size: 14px;
+        }
+    </style>
+    <script>
+        // Custom component to preserve original image aspect ratio
+        AFRAME.registerComponent('dynamic-image', {
+            schema: {
+                src: { type: 'string' },
+                height: { type: 'number', default: 2 }
+            },
+            init: function () {
+                const el = this.el;
+                const data = this.data;
+                el.setAttribute('material', `src: ${data.src}; shader: flat`);
+
+                const img = new Image();
+                img.src = data.src;
+                img.onload = () => {
+                    const aspect = img.naturalWidth / img.naturalHeight;
+                    const calculatedWidth = data.height * aspect;
+                    el.setAttribute('geometry', `primitive: plane; width: ${calculatedWidth}; height: ${data.height}`);
+                };
+            }
+        });
+    </script>
+</head>
+<body>
+    <div id="ui">Look at paintings or objects to inspect descriptions. Press 'E' to pick up or drop items.</div>
+    <a-scene>
+        <!-- Asset Management -->
+        <a-assets>
+            <a-asset-item id="skull-model" src="./data/skull.glb"></a-asset-item>
+            <a-asset-item id="magazine-model" src="./data/magazine.glb"></a-asset-item>
+            <a-asset-item id="tractor-model" src="./data/tractor.glb"></a-asset-item>
+        </a-assets>
+
+        <!-- Camera and Raycaster Cursor -->
+        <a-camera position="0 2 0">
+            <a-cursor raycaster="objects: .interactive" fuse="false" material="color: #00ffcc; shader: flat"></a-cursor>
+        </a-camera>
+
+        <!-- Complete Enclosed Room Structure -->
+        <a-plane position="0 0 0" rotation="-90 0 0" width="12" height="12" color="#1a1a1a"></a-plane> <!-- Floor -->
+        <a-plane position="0 6 0" rotation="90 0 0" width="12" height="12" color="#151515"></a-plane>  <!-- Ceiling -->
+        <a-plane position="0 3 -6" width="12" height="6" color="#2e2e2e"></a-plane>                  <!-- Back Wall -->
+        <a-plane position="0 3 6" rotation="0 180 0" width="12" height="6" color="#2e2e2e"></a-plane> <!-- Front Wall -->
+        <a-plane position="-6 3 0" rotation="0 90 0" width="12" height="6" color="#242424"></a-plane> <!-- Left Wall -->
+        <a-plane position="6 3 0" rotation="0 -90 0" width="12" height="6" color="#242424"></a-plane>  <!-- Right Wall -->
+
+        <a-text id="floating-desc" value="Welcome to the Gallery\nClick any painting or object to read its description." 
+                position="0 4.8 -5.9" align="center" width="4.5" color="#ffffff" font="monoid">
+        </a-text>
+
+        <!-- BACK WALL PICTURES -->
+        <a-entity class="interactive" dynamic-image="src: ./data/dantes-hell.jpg; height: 2" position="-3 2.8 -5.9"
+                  onclick="updateDescription('Artwork 1: Dante\'s Hell\nClassic dark illustration.')">
+        </a-entity>
+        <a-entity class="interactive" dynamic-image="src: ./data/garden-of-earthly-delights.jpg; height: 2" position="3 2.8 -5.9"
+                  onclick="updateDescription('Artwork 2: Garden of Earthly Delights\nHieronymus Bosch triptych detail.')">
+        </a-entity>
+
+        <!-- LEFT WALL PICTURES -->
+        <a-entity class="interactive" dynamic-image="src: ./data/giger.jpg; height: 2" position="-5.9 2.8 -2" rotation="0 90 0"
+                  onclick="updateDescription('Artwork 3: H.R. Giger Study\nBio-mechanical expressionism.')">
+        </a-entity>
+        <a-entity class="interactive" dynamic-image="src: ./data/giger-2.jpg; height: 2" position="-5.9 2.8 2" rotation="0 90 0"
+                  onclick="updateDescription('Artwork 4: Left Wing Gallery\nSurrealist composition study.')">
+        </a-entity>
+
+        <!-- RIGHT WALL PICTURES -->
+        <a-entity class="interactive" dynamic-image="src: ./data/colani-1.png; height: 2" position="5.9 2.8 -2" rotation="0 -90 0"
+                  onclick="updateDescription('Artwork 5: Luigi Colani Sport car Concept\nAerodynamic industrial design.')">
+        </a-entity>
+        <a-entity class="interactive" dynamic-image="src: ./data/colani-chair.jpg; height: 2" position="5.9 2.8 2" rotation="0 -90 0"
+                  onclick="updateDescription('Artwork 6: Luigi Colani chair Concept')">
+        </a-entity>
+
+        <!-- Display Shelf (Top surface is at Y = 1.05) -->
+        <a-box position="0 1 -3" width="2" height="0.1" depth="0.8" color="#3d3d3d"></a-box>
+
+        <!-- Multiple Pickable 3D Models (Added 'interactive' class so cursor can click them for descriptions) -->
+        <a-gltf-model class="pickable interactive" id="skull" src="#skull-model" position="-0.5 1.5 -3" scale="0.5 0.5 0.5"
+            onclick="updateDescription('Artifact: Human Skull\nA basic specimen, recently cataloged.')"></a-gltf-model>
+        <a-gltf-model class="pickable interactive" id="magazine" src="#magazine-model" position="0.5 1.5 -3" scale="0.5 0.5 0.5"
+            onclick="updateDescription('Artifact: Magazine\nStandard firearm magazine, currently empty.')"></a-gltf-model>
+        <a-gltf-model class="pickable interactive" id="tractor" src="#tractor-model" rotation="0 -45 0" 
+            position="2 -0.15 2" scale="0.2 0.2 0.2"
+            onclick="updateDescription('Artifact: Brown D25 Tractor\nAn industrial anomaly featured in an art exhibition.')"></a-gltf-model>
+    </a-scene>
+
+    <script>
+        let heldObject = null;
+        let fallingObjects = [];
+        const camera = document.querySelector('a-camera');
+        const ui = document.getElementById('ui');
+
+        function updateDescription(text) {
+            document.getElementById('floating-desc').setAttribute('value', text);
+        }
+
+        // Half-Life style 'E' key interaction system
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'e') {
+                const camPos = camera.object3D.position;
+
+                if (!heldObject) {
+                    const pickables = document.querySelectorAll('.pickable');
+                    let closest = null;
+                    let minDist = 4.0;
+
+                    pickables.forEach(el => {
+                        const worldPos = new THREE.Vector3();
+                        el.object3D.getWorldPosition(worldPos);
+                        const distance = camPos.distanceTo(worldPos);
+                        if (distance < minDist) {
+                            minDist = distance;
+                            closest = el;
+                        }
+                    });
+
+                    if (closest) {
+                        heldObject = closest;
+                        heldObject.dataset.isFalling = "false";
+                        ui.innerText = "Object picked up! Press 'E' to drop it.";
+                        
+                        camera.object3D.attach(heldObject.object3D);
+                        heldObject.object3D.position.set(0, -0.2, -1.2);
+                        heldObject.object3D.rotation.set(0, 0, 0);
+                    } else {
+                        ui.innerText = "No object close enough to pick up!";
+                    }
+                } else {
+                    ui.innerText = "Object dropped.";
+                    const scene = document.querySelector('a-scene');
+                    const worldPos = new THREE.Vector3();
+                    heldObject.object3D.getWorldPosition(worldPos);
+                    
+                    scene.object3D.attach(heldObject.object3D);
+                    heldObject.object3D.position.copy(worldPos);
+                    
+                    heldObject.dataset.dropVelocity = "0";
+                    heldObject.dataset.isFalling = "true";
+                    
+                    if (!fallingObjects.includes(heldObject)) {
+                        fallingObjects.push(heldObject);
+                    }
+
+                    heldObject = null;
+                }
+            }
+        });
+
+        // Main animation loop (Handles wall boundaries and gravity)
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Prevent camera from walking through walls (Room bounds: -5.4 to 5.4)
+            const camPos = camera.object3D.position;
+            const limit = 5.4;
+            if (camPos.x > limit) camPos.x = limit;
+            if (camPos.x < -limit) camPos.x = -limit;
+            if (camPos.z > limit) camPos.z = limit;
+            if (camPos.z < -limit) camPos.z = -limit;
+
+            // Dynamic bounding-box gravity loop for accurate landing
+            fallingObjects.forEach((obj, index) => {
+                if (obj.dataset.isFalling === "true") {
+                    let velocity = parseFloat(obj.dataset.dropVelocity || "0") + 0.015;
+                    obj.dataset.dropVelocity = velocity;
+                    obj.object3D.position.y -= velocity;
+
+                    const pos = obj.object3D.position;
+                    
+                    // Determine target surface height
+                    const overShelf = (pos.x >= -1.0 && pos.x <= 1.0 && pos.z >= -3.4 && pos.z <= -2.6);
+                    const overBasket = (pos.x >= 1.6 && pos.x <= 2.4 && pos.z >= -3.4 && pos.z <= -2.6);
+
+                    let targetSurfaceY = 0.0; // Floor level
+                    if (overShelf) targetSurfaceY = 1.05; // Top of shelf
+                    if (overBasket) targetSurfaceY = 0.6;  // Top of basket
+
+                    // Compute precise bounding box bottom in world space
+                    const bbox = new THREE.Box3().setFromObject(obj.object3D);
+                    const bottomY = bbox.min.y;
+
+                    if (bottomY <= targetSurfaceY) {
+                        // Correct position so the bottom rests exactly on the surface
+                        const diff = targetSurfaceY - bottomY;
+                        obj.object3D.position.y += diff;
+
+                        obj.dataset.isFalling = "false";
+                        obj.dataset.dropVelocity = "0";
+                        fallingObjects.splice(index, 1);
+                    }
+                }
+            });
+        }
+        animate();
+    </script>
+</body>
+</html>
